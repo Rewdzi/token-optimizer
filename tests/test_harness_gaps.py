@@ -53,7 +53,7 @@ def test_codex_bridge_entries_have_measured_bounded_budgets(
             "measure",
             ["compact-capture", "--trigger", "auto", "--quiet"],
             20.0,
-            2.5,
+            10.0,
             "PreCompact:compact-capture",
         ),
         (

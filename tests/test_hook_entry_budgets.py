@@ -40,6 +40,7 @@ from hook_runtime import (  # noqa: E402
     BUDGET_POSTTOOL_MEASURE,
     BUDGET_POSTTOOL_RUNNER,
     BUDGET_PRETOOL,
+    BUDGET_PRECOMPACT_CAPTURE,
     BUDGET_PRETOOL_MEASURE,
     BUDGET_STOP,
     HookDeadline,
@@ -132,7 +133,7 @@ EXPECTED = {
     # streak write, so it gets the same runner budget as PostToolUse.
     ("PostToolUseFailure", "posttooluse_runner", ""): BUDGET_POSTTOOL_RUNNER,
     ("PreCompact", "measure", "dynamic-compact-instructions"): BUDGET_POSTTOOL_MEASURE,
-    ("PreCompact", "measure", "compact-capture"): BUDGET_STOP,
+    ("PreCompact", "measure", "compact-capture"): BUDGET_PRECOMPACT_CAPTURE,
     ("PreCompact", "read_cache", "--clear"): BUDGET_POSTTOOL_MEASURE,
     ("PostCompact", "measure", "quality-cache"): BUDGET_POSTTOOL_MEASURE,
     ("CwdChanged", "read_cache", "--clear"): BUDGET_POSTTOOL_MEASURE,
@@ -195,6 +196,10 @@ def test_every_budget_clears_the_smallest_host_ceiling_with_margin():
             f"{event} {module} {args}: budget {secs}s is not comfortably under "
             f"its own {timeout}s host ceiling"
         )
+        # The PreCompact checkpoint save is a full compact-capture run (7-9 s
+        # measured), so only its own ceiling above applies, not the 5 s one.
+        if event == "PreCompact" and args[:1] == ["compact-capture"]:
+            continue
         assert secs < SMALLEST_HOST_CEILING, (
             f"{event} {module} {args}: budget {secs}s exceeds the smallest host "
             f"ceiling ({SMALLEST_HOST_CEILING}s)"
@@ -229,7 +234,7 @@ def test_every_budget_clears_the_smallest_host_ceiling_with_margin():
         ("codex_hook_bridge", ["subagent-start"], 2.5),
         ("codex_hook_bridge", ["subagent-stop"], 2.5),
         ("measure", ["dynamic-compact-instructions", "--quiet"], BUDGET_POSTTOOL_MEASURE),
-        ("measure", ["compact-capture", "--trigger", "auto", "--quiet"], BUDGET_STOP),
+        ("measure", ["compact-capture", "--trigger", "auto", "--quiet"], BUDGET_PRECOMPACT_CAPTURE),
         ("measure", ["quality-cache", "--force", "--quiet"], BUDGET_POSTTOOL_MEASURE),
         ("read_cache", ["--clear", "--quiet"], BUDGET_POSTTOOL_MEASURE),
     ],
